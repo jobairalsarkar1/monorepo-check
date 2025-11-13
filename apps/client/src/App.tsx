@@ -29,93 +29,96 @@ function AppContent() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      <h1>Monorepo tRPC Demo</h1>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">
+        Monorepo tRPC Demo
+      </h1>
 
       {/* Health Status */}
-      <section>
-        <h2>Health Status</h2>
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold mb-2">Health Status</h2>
         {health.data ? (
-          <p>
+          <p className="text-green-600">
             Status: {health.data.status} - {health.data.timestamp}
           </p>
         ) : (
-          <p>Loading health status...</p>
+          <p className="text-gray-600">Loading health status...</p>
         )}
       </section>
 
       {/* Create User Form */}
-      <section
-        style={{ margin: "20px 0", padding: "20px", border: "1px solid #ccc" }}
-      >
-        <h2>Create New User</h2>
-        <form onSubmit={handleCreateUser}>
+      <section className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
+        <h2 className="text-xl font-semibold mb-4">Create New User</h2>
+        <form onSubmit={handleCreateUser} className="flex flex-col space-y-4">
           <input
             type="text"
             placeholder="Name"
             value={newUserName}
             onChange={(e) => setNewUserName(e.target.value)}
-            style={{ margin: "5px", padding: "8px" }}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="email"
             placeholder="Email"
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
-            style={{ margin: "5px", padding: "8px" }}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button type="submit" style={{ margin: "5px", padding: "8px 16px" }}>
+          <button
+            type="submit"
+            className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             Create User
           </button>
         </form>
-        {createUser.isPending && <p>Creating user...</p>}
+        {createUser.isPending && (
+          <p className="mt-2 text-blue-600">Creating user...</p>
+        )}
       </section>
 
       {/* Users List */}
-      <section style={{ margin: "20px 0" }}>
-        <h2>Users</h2>
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Users</h2>
         {users.isLoading ? (
-          <p>Loading users...</p>
+          <p className="text-gray-600">Loading users...</p>
         ) : (
-          <ul>
+          <div className="grid gap-4">
             {users.data?.map((user: any) => (
-              <li
+              <div
                 key={user.id}
-                style={{
-                  margin: "10px 0",
-                  padding: "10px",
-                  border: "1px solid #eee",
-                }}
+                className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
               >
-                <strong>{user.name}</strong> - {user.email} (ID: {user.id})
-              </li>
+                <strong className="text-lg">{user.name}</strong>
+                <span className="text-gray-600 ml-2">- {user.email}</span>
+                <span className="text-sm text-gray-500 ml-2">
+                  (ID: {user.id})
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
       {/* Posts List */}
-      <section style={{ margin: "20px 0" }}>
-        <h2>Posts</h2>
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Posts</h2>
         {posts.isLoading ? (
-          <p>Loading posts...</p>
+          <p className="text-gray-600">Loading posts...</p>
         ) : (
-          <ul>
+          <div className="grid gap-4">
             {posts.data?.map((post: any) => (
-              <li
+              <div
                 key={post.id}
-                style={{
-                  margin: "10px 0",
-                  padding: "10px",
-                  border: "1px solid #eee",
-                }}
+                className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
               >
-                <h3>{post.title}</h3>
-                <p>{post.content}</p>
-                <small>By: {post.user?.name}</small>
-              </li>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {post.title}
+                </h3>
+                <p className="text-gray-700 mt-2">{post.content}</p>
+                <small className="text-gray-500">By: {post.user?.name}</small>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>
