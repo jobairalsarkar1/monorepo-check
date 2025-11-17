@@ -1,0 +1,26 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./apps/server/Dockerfile.dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./apps/server:/app/apps/server
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  client:
+    build:
+      context: .
+      dockerfile: ./apps/client/Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/client:/app/apps/client
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:4000
+    depends_on:
+      - server

@@ -1,0 +1,26 @@
+# Base image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Copy root workspace files for installing dependencies
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy client package.json separately
+COPY apps/client/package.json ./apps/client/package.json
+
+# Install dependencies including devDependencies
+RUN pnpm install
+
+# Copy client source code
+COPY apps/client ./apps/client
+
+# Set working dir to client
+WORKDIR /app/apps/client
+
+# Dev command
+CMD ["pnpm", "dev"]

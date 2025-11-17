@@ -31,7 +31,8 @@ function AppContent() {
   return (
     <div className="container mx-auto p-6 max-w-4xl text-gray-100">
       <h1 className="text-3xl font-bold text-gray-100 mb-8">
-        Nothing Ground Breaking: <span className="text-green-500">Just Learning </span>
+        Nothing Ground Breaking:{" "}
+        <span className="text-green-500">Just Learning </span>
       </h1>
 
       {/* Health Status */}
@@ -76,7 +77,9 @@ function AppContent() {
           </button>
         </form>
         {createUser.isPending && (
-          <p className="mt-2 text-green-600 text-center font-semibold">Creating user...</p>
+          <p className="mt-2 text-green-600 text-center font-semibold">
+            Creating user...
+          </p>
         )}
       </section>
 
@@ -84,7 +87,9 @@ function AppContent() {
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Users</h2>
         {users.isLoading ? (
-          <p className="mt-2 text-green-600 text-center font-semibold">Loading users...</p>
+          <p className="mt-2 text-green-600 text-center font-semibold">
+            Loading users...
+          </p>
         ) : (
           <div className="grid gap-4">
             {users.data?.map((user: any) => (
@@ -107,7 +112,9 @@ function AppContent() {
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Posts</h2>
         {posts.isLoading ? (
-          <p className="mt-2 text-green-600 text-center font-semibold">Loading posts...</p>
+          <p className="mt-2 text-green-600 text-center font-semibold">
+            Loading posts...
+          </p>
         ) : (
           <div className="grid gap-4">
             {posts.data?.map((post: any) => (
@@ -135,7 +142,9 @@ function App() {
     trpc.createClient({
       links: [
         httpBatchLink({
-          url: "http://localhost:3000/trpc",
+          url:
+            `${import.meta.env.VITE_API_URL}/trpc` ||
+            "http://localhost:4000/trpc",
         }),
       ],
     })
