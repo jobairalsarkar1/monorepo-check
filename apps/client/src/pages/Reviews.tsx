@@ -34,12 +34,43 @@ export default function Reviews() {
   });
 
   const data = query.data;
-
   const totalPages = data ? Math.ceil(data.total_reviews / ITEMS_PER_PAGE) : 1;
 
   const goToPage = (page: number) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const getVisiblePages = () => {
+    if (!data) return [];
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, "...");
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push("...", totalPages);
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
   };
 
   // skeleton loader
@@ -91,38 +122,53 @@ export default function Reviews() {
       </div>
 
       {/* pagination */}
-      <div className="flex justify-between items-center mt-12 pt-6 border-t border-gray-700">
-        <button
-          onClick={() => goToPage(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
-        >
-          Prev
-        </button>
-
-        <div className="flex items-center gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => goToPage(page)}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                currentPage === page
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-12 pt-6 border-t border-gray-700">
+        <div className="text-gray-400 text-sm">
+          Showing{" "}
+          {data ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0} to{" "}
+          {data
+            ? Math.min(currentPage * ITEMS_PER_PAGE, data.total_reviews)
+            : 0}{" "}
+          of {data?.total_reviews ?? 0} reviews
         </div>
 
-        <button
-          onClick={() => goToPage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
-        >
-          Next
-        </button>
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-200"
+          >
+            Prev
+          </button>
+
+          {getVisiblePages().map((page, index) =>
+            page === "..." ? (
+              <span key={index} className="px-3 py-2 text-gray-400">
+                ...
+              </span>
+            ) : (
+              <button
+                key={index}
+                onClick={() => goToPage(page as number)}
+                className={`px-3 py-2 rounded-md transition-colors duration-200 ${
+                  currentPage === page
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-200"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
