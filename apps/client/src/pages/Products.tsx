@@ -31,8 +31,20 @@ export default function Products() {
   const initialPage = parseInt(searchParams.get("page") || "1", 10);
   const [currentPage, setCurrentPage] = useState(initialPage);
 
+  // When URL changes, update state
   useEffect(() => {
-    navigate(`?page=${currentPage}`, { replace: true });
+    const pageInUrl = parseInt(searchParams.get("page") || "1", 10);
+    if (pageInUrl !== currentPage) {
+      setCurrentPage(pageInUrl);
+    }
+  }, [searchParams]);
+
+  // When state changes, update URL
+  useEffect(() => {
+    const pageInUrl = parseInt(searchParams.get("page") || "1", 10);
+    if (pageInUrl !== currentPage) {
+      navigate(`?page=${currentPage}`);
+    }
   }, [currentPage]);
 
   const query = useQuery({
@@ -66,7 +78,8 @@ export default function Products() {
     <div className="container mx-auto max-w-6xl p-6 min-h-screen">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white">
-          Products: <span className="text-green-500">PlaceAPI API & Shadcn UI</span>
+          Products:{" "}
+          <span className="text-green-500">PlaceAPI API & Shadcn UI</span>
         </h1>
         <a
           href="/"
@@ -109,7 +122,7 @@ export default function Products() {
               ))}
 
             {!query.isLoading &&
-              data?.data.map((p: any) => (
+              data.data.map((p: any) => (
                 <TableRow key={p.id} className="bg-gray-950 hover:bg-gray-700">
                   <TableCell className="font-semibold">{p.name}</TableCell>
                   <TableCell>{p.category}</TableCell>
@@ -151,7 +164,11 @@ export default function Products() {
             <Button
               key={i}
               onClick={() => goToPage(i + 1)}
-              className={currentPage === i + 1 ? "bg-green-600" : "bg-gray-900 hover:bg-gray-800"}
+              className={
+                currentPage === i + 1
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-gray-900 hover:bg-gray-800"
+              }
             >
               {i + 1}
             </Button>
