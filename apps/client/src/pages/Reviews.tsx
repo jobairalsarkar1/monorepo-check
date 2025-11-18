@@ -82,7 +82,7 @@ export default function Reviews() {
     <div className="container mx-auto max-w-4xl p-6 min-h-screen">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-6">
-          Reviews <span className="text-green-500">API</span>
+          Reviews: <span className="text-green-500">PlaceAPI API</span>
         </h1>
         <a
           href="/"
@@ -153,7 +153,7 @@ export default function Reviews() {
                 className={`px-3 py-2 rounded-md transition-colors duration-200 ${
                   currentPage === page
                     ? "bg-green-600 text-white"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    : "bg-gray-900 text-gray-300 hover:bg-gray-800"
                 }`}
               >
                 {page}

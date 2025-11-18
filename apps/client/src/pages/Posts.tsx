@@ -120,7 +120,7 @@ export default function PaginationPage() {
                 className={`px-3 py-2 rounded-md transition-colors duration-200 ${
                   currentPage === page
                     ? "bg-green-600 text-white"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    : "bg-gray-900 text-gray-300 hover:bg-gray-800"
                 }`}
               >
                 {page}
