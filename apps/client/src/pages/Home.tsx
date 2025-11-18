@@ -12,7 +12,7 @@ function Home() {
 
   const health = trpc.health.useQuery();
   const users = trpc.userList.useQuery();
-  const posts = trpc.postList.useQuery();
+  //   const posts = trpc.postList.useQuery();
 
   const createUser = trpc.userCreate.useMutation({
     onSuccess: () => {
@@ -32,7 +32,8 @@ function Home() {
   return (
     <div className="container mx-auto p-6 max-w-4xl text-gray-100">
       <h1 className="text-3xl font-bold mb-6">
-        Nothing Ground Breaking: <span className="text-green-500"> Just Learning </span>
+        Nothing Ground Breaking:{" "}
+        <span className="text-green-500"> Just Learning </span>
       </h1>
       <nav>
         <ul className="flex space-x-4 mb-6">
