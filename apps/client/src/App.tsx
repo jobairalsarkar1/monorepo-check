@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Posts from "./pages/Posts";
+import Reviews from "./pages/Reviews";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -26,6 +27,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/posts" element={<Posts />} />
+            <Route path="/reviews" element={<Reviews />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>

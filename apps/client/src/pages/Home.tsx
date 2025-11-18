@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { trpc } from "../trpc";
 
+const navItems = [
+  { name: "Posts", href: "/posts" },
+  { name: "Reviews", href: "/reviews" },
+];
+
 function Home() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -27,29 +32,38 @@ function Home() {
   return (
     <div className="container mx-auto p-6 max-w-4xl text-gray-100">
       <h1 className="text-3xl font-bold mb-6">
-        Nothing Ground Breaking: Just Learning
+        Nothing Ground Breaking: <span className="text-green-500"> Just Learning </span>
       </h1>
-      <a
-        href="/posts"
-        className="px-4 py-2 bg-green-600 rounded-md inline-block mb-6"
-      >
-        Posts
-      </a>
+      <nav>
+        <ul className="flex space-x-4 mb-6">
+          {navItems.map((item) => (
+            <li key={item.name}>
+              <a
+                href={item.href}
+                className="px-4 py-2 bg-green-600 rounded-md hover:bg-green-700 transition-colors duration-200"
+              >
+                {item.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
-      {/* Health Status */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">Health Status</h2>
+        <h2 className="text-xl font-semibold mb-2">Status Check</h2>
         {health.data ? (
           <p className="text-green-600 font-medium tracking-wide">
             Status:{" "}
-            <span className="font-semibold uppercase">{health.data.status}</span>
+            <span className="font-semibold uppercase">
+              {health.data.status}
+            </span>
           </p>
         ) : (
           <p className="text-gray-600">Loading health status...</p>
         )}
       </section>
 
-      {/* Create User Form */}
+      {/* create user */}
       <section className="mb-8 p-6 border border-green-500 rounded-lg">
         <h2 className="text-xl font-semibold mb-4">Create New User</h2>
         <form onSubmit={handleCreateUser} className="flex flex-col space-y-4">
@@ -81,7 +95,7 @@ function Home() {
         )}
       </section>
 
-      {/* Users List */}
+      {/* users */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Users</h2>
         {users.isLoading ? (
@@ -97,15 +111,17 @@ function Home() {
               >
                 <strong className="text-lg text-white/80">{user.name}</strong>
                 <span className="text-gray-500 ml-2">- {user.email}</span>
-                <span className="text-sm text-gray-500 ml-2">(ID: {user.id})</span>
+                <span className="text-sm text-gray-500 ml-2">
+                  (ID: {user.id})
+                </span>
               </div>
             ))}
           </div>
         )}
       </section>
 
-      {/* Posts List */}
-      <section className="mb-8">
+      {/* posts */}
+      {/* <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Posts</h2>
         {posts.isLoading ? (
           <p className="mt-2 text-green-600 text-center font-semibold">
@@ -118,14 +134,16 @@ function Home() {
                 key={post.id}
                 className="p-4 border border-gray-500 rounded-lg shadow-sm"
               >
-                <h3 className="text-lg font-semibold text-white/80">{post.title}</h3>
+                <h3 className="text-lg font-semibold text-white/80">
+                  {post.title}
+                </h3>
                 <p className="text-gray-400 mt-2">{post.content}</p>
                 <small className="text-gray-500">By: {post.user?.name}</small>
               </div>
             ))}
           </div>
         )}
-      </section>
+      </section> */}
     </div>
   );
 }
