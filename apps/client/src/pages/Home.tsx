@@ -4,6 +4,7 @@ import { trpc } from "../trpc";
 const navItems = [
   { name: "Posts", href: "/posts" },
   { name: "Reviews", href: "/reviews" },
+  { name: "Products", href: "/products" },
 ];
 
 function Home() {
