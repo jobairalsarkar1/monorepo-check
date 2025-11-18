@@ -2,6 +2,32 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+  VisibilityState,
+} from "@tanstack/react-table";
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
   Table,
   TableBody,
   TableCell,
@@ -9,18 +35,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Types for our data
 interface Product {
@@ -36,7 +52,7 @@ interface Product {
   };
 }
 
-// API function to fetch products (FakeStore API - English data)
+// API function to fetch products
 const fetchProducts = async (): Promise<Product[]> => {
   const response = await fetch("https://fakestoreapi.com/products");
   if (!response.ok) {
@@ -62,20 +78,154 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+export const columns: ColumnDef<Product>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "title",
+    header: "Product",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-3">
+        <img
+          src={row.original.image}
+          alt={row.original.title}
+          className="w-10 h-10 object-contain rounded"
+        />
+        <div className="max-w-xs">
+          <div className="font-medium line-clamp-2">
+            {row.getValue("title")}
+          </div>
+          <div className="text-sm text-muted-foreground line-clamp-1">
+            {row.original.description}
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "category",
+    header: "Category",
+    cell: ({ row }) => (
+      <Badge variant="outline">{row.getValue("category")}</Badge>
+    ),
+  },
+  {
+    accessorKey: "price",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Price
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const price = parseFloat(row.getValue("price"));
+      const formatted = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(price);
+
+      return <div className="font-medium">{formatted}</div>;
+    },
+  },
+  {
+    accessorKey: "rating.rate",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Rating
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const rating = row.original.rating;
+      return (
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <span className="text-yellow-500">★</span>
+            <span>{rating.rate}</span>
+          </div>
+          <span className="text-muted-foreground text-sm">
+            ({rating.count})
+          </span>
+        </div>
+      );
+    },
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const product = row.original;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(product.title)}
+            >
+              Copy product name
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem>Edit product</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
+];
+
 function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [globalFilter, setGlobalFilter] = React.useState(
+    searchParams.get("search") || ""
+  );
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
 
-  // Get current search and filter values from URL
-  const search = searchParams.get("search") || "";
-  const category = searchParams.get("category") || "all";
-  const priceRange = searchParams.get("priceRange") || "all";
-  const rating = searchParams.get("rating") || "all";
-  const page = parseInt(searchParams.get("page") || "1");
-
-  const pageSize = 10;
-
-  // Debounced search to avoid too many re-renders
-  const debouncedSearch = useDebounce(search, 300);
+  // Debounced search
+  const debouncedSearch = useDebounce(globalFilter, 300);
 
   // TanStack Query for data fetching
   const {
@@ -88,102 +238,44 @@ function ProductsPage() {
     queryFn: fetchProducts,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    select: (data) => {
-      // Transform data immediately after fetch
-      return data.map((product) => ({
-        ...product,
-        category:
-          product.category.charAt(0).toUpperCase() + product.category.slice(1),
-      }));
-    },
   });
 
-  // Update URL parameters
-  const updateSearchParams = (key: string, value: string) => {
+  // Sync URL with search
+  React.useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
-    if (value && value !== "all") {
-      newParams.set(key, value);
+    if (debouncedSearch) {
+      newParams.set("search", debouncedSearch);
     } else {
-      newParams.delete(key);
-    }
-    // Reset to page 1 when filters change
-    if (key !== "page") {
-      newParams.set("page", "1");
+      newParams.delete("search");
     }
     setSearchParams(newParams);
-  };
+  }, [debouncedSearch, setSearchParams, searchParams]);
 
-  // Memoized filtered products
-  const filteredProducts = React.useMemo(() => {
-    return products.filter((product) => {
-      // Search filter
-      const matchesSearch =
-        debouncedSearch === "" ||
-        product.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        product.description
-          .toLowerCase()
-          .includes(debouncedSearch.toLowerCase()) ||
-        product.category.toLowerCase().includes(debouncedSearch.toLowerCase());
-
-      // Category filter
-      const matchesCategory =
-        category === "all" || product.category === category;
-
-      // Price range filter
-      const matchesPriceRange =
-        priceRange === "all" ||
-        (priceRange === "under25" && product.price < 25) ||
-        (priceRange === "25to50" &&
-          product.price >= 25 &&
-          product.price <= 50) ||
-        (priceRange === "50to100" &&
-          product.price > 50 &&
-          product.price <= 100) ||
-        (priceRange === "over100" && product.price > 100);
-
-      // Rating filter
-      const matchesRating =
-        rating === "all" ||
-        (rating === "4plus" && product.rating.rate >= 4) ||
-        (rating === "3plus" && product.rating.rate >= 3) ||
-        (rating === "2plus" && product.rating.rate >= 2);
-
-      return (
-        matchesSearch && matchesCategory && matchesPriceRange && matchesRating
-      );
-    });
-  }, [products, debouncedSearch, category, priceRange, rating]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / pageSize);
-  const paginatedProducts = filteredProducts.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
-
-  // Get unique categories for filter
-  const categories = React.useMemo(() => {
-    const uniqueCategories = Array.from(
-      new Set(products.map((product) => product.category))
-    ).sort();
-    return uniqueCategories;
-  }, [products]);
-
-  // Clear all filters
-  const clearAllFilters = () => {
-    setSearchParams(new URLSearchParams());
-  };
+  const table = useReactTable({
+    data: products,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter: debouncedSearch,
+      columnVisibility,
+      rowSelection,
+    },
+  });
 
   if (isError) {
     return (
       <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center text-red-500">
-              Error: {error.message}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="text-center text-red-500">Error: {error.message}</div>
       </div>
     );
   }
@@ -194,321 +286,137 @@ function ProductsPage() {
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground mt-1">
-            Browse our collection of high-quality products
+            Browse our collection of products
           </p>
         </div>
         <div className="text-sm text-muted-foreground">
-          Showing {paginatedProducts.length} of {filteredProducts.length}{" "}
-          products
-          {filteredProducts.length !== products.length && (
-            <span> (filtered from {products.length} total)</span>
-          )}
+          {table.getFilteredRowModel().rows.length} products
         </div>
       </div>
 
-      {/* Search and Filter Controls */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-            {/* Search Input */}
-            <div className="space-y-2 lg:col-span-2">
-              <label htmlFor="search" className="text-sm font-medium">
-                Search Products
-              </label>
-              <Input
-                id="search"
-                placeholder="Search by title, description, or category..."
-                value={search}
-                onChange={(e) => updateSearchParams("search", e.target.value)}
-                className="w-full"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div className="space-y-2">
-              <label htmlFor="category-filter" className="text-sm font-medium">
-                Category
-              </label>
-              <Select
-                value={category}
-                onValueChange={(value) => updateSearchParams("category", value)}
-              >
-                <SelectTrigger id="category-filter">
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Price Range Filter */}
-            <div className="space-y-2">
-              <label htmlFor="price-filter" className="text-sm font-medium">
-                Price Range
-              </label>
-              <Select
-                value={priceRange}
-                onValueChange={(value) =>
-                  updateSearchParams("priceRange", value)
-                }
-              >
-                <SelectTrigger id="price-filter">
-                  <SelectValue placeholder="All prices" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All prices</SelectItem>
-                  <SelectItem value="under25">Under $25</SelectItem>
-                  <SelectItem value="25to50">$25 - $50</SelectItem>
-                  <SelectItem value="50to100">$50 - $100</SelectItem>
-                  <SelectItem value="over100">Over $100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Rating Filter */}
-            <div className="space-y-2">
-              <label htmlFor="rating-filter" className="text-sm font-medium">
-                Minimum Rating
-              </label>
-              <Select
-                value={rating}
-                onValueChange={(value) => updateSearchParams("rating", value)}
-              >
-                <SelectTrigger id="rating-filter">
-                  <SelectValue placeholder="Any rating" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Any rating</SelectItem>
-                  <SelectItem value="4plus">4+ Stars</SelectItem>
-                  <SelectItem value="3plus">3+ Stars</SelectItem>
-                  <SelectItem value="2plus">2+ Stars</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Active Filters */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              {(search ||
-                category !== "all" ||
-                priceRange !== "all" ||
-                rating !== "all") && (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    Active filters:
-                  </span>
-                  {search && (
-                    <Badge
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      Search: "{search}"
-                      <button
-                        onClick={() => updateSearchParams("search", "")}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                  {category !== "all" && (
-                    <Badge
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      Category: {category}
-                      <button
-                        onClick={() => updateSearchParams("category", "all")}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                  {priceRange !== "all" && (
-                    <Badge
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      Price:{" "}
-                      {priceRange === "under25"
-                        ? "Under $25"
-                        : priceRange === "25to50"
-                        ? "$25-$50"
-                        : priceRange === "50to100"
-                        ? "$50-$100"
-                        : "Over $100"}
-                      <button
-                        onClick={() => updateSearchParams("priceRange", "all")}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                  {rating !== "all" && (
-                    <Badge
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      Rating:{" "}
-                      {rating === "4plus"
-                        ? "4+ Stars"
-                        : rating === "3plus"
-                        ? "3+ Stars"
-                        : "2+ Stars"}
-                      <button
-                        onClick={() => updateSearchParams("rating", "all")}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                </>
-              )}
-            </div>
-
-            {(search ||
-              category !== "all" ||
-              priceRange !== "all" ||
-              rating !== "all") && (
-              <Button variant="outline" size="sm" onClick={clearAllFilters}>
-                Clear All
+      <div className="w-full">
+        <div className="flex items-center py-4">
+          <Input
+            placeholder="Search all products..."
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(event.target.value)}
+            className="max-w-sm"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      {/* Data Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Products Catalog</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            // Loading skeleton
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
-                </div>
+        <div className="overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
               ))}
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Reviews</TableHead>
-                    <TableHead className="max-w-md">Description</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedProducts.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        No products found matching your criteria.
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                // Loading skeleton
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={index}>
+                    {columns.map((_, cellIndex) => (
+                      <TableCell key={cellIndex}>
+                        <Skeleton className="h-4 w-full" />
                       </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={product.image}
-                              alt={product.title}
-                              className="w-10 h-10 object-contain rounded"
-                            />
-                            <span className="max-w-xs line-clamp-2">
-                              {product.title}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{product.category}</Badge>
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          ${product.price.toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <span className="text-yellow-500">★</span>
-                            <span>{product.rating.rate}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {product.rating.count} reviews
-                        </TableCell>
-                        <TableCell className="max-w-md line-clamp-2 text-sm text-muted-foreground">
-                          {product.description}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <div className="text-sm text-muted-foreground">
-                    Page {page} of {totalPages}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        updateSearchParams(
-                          "page",
-                          Math.max(1, page - 1).toString()
-                        )
-                      }
-                      disabled={page === 1}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        updateSearchParams(
-                          "page",
-                          Math.min(totalPages, page + 1).toString()
-                        )
-                      }
-                      disabled={page === totalPages}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
+                    ))}
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No products found.
+                  </TableCell>
+                </TableRow>
               )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="text-muted-foreground flex-1 text-sm">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
