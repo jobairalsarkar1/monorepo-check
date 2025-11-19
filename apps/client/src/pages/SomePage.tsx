@@ -130,7 +130,7 @@ function ProductsPage() {
   const [rowSelection, setRowSelection] = React.useState({});
 
   // search debouncing
-  const debouncedSearch = useDebounce(globalFilter, 300);
+  const debouncedSearch = useDebounce(globalFilter, 500);
 
   // tanStack Query for data fetching
   const {
@@ -176,14 +176,6 @@ function ProductsPage() {
       rowSelection,
     },
     enableGlobalFilter: true,
-    globalFilterFn: (row, filterValue) => {
-      if (!filterValue) return true;
-
-      const search = filterValue.toLowerCase();
-      const title = row.original.title.toLowerCase();
-
-      return title.includes(search);
-    },
   });
 
   if (isError) {
@@ -205,9 +197,6 @@ function ProductsPage() {
             Browse our collection of products
           </p>
         </div>
-        {/* <div className="text-sm text-gray-500">
-          {table.getFilteredRowModel().rows.length} products
-        </div> */}
         <a
           href="/"
           className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
@@ -217,13 +206,20 @@ function ProductsPage() {
       </div>
 
       <div className="w-full">
-        <div className="flex items-center py-4">
+        <div className="flex items-center py-4 gap-4">
           <Input
-            placeholder="Search products by title..."
+            placeholder="Search products by title or category..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="max-w-sm border-gray-300 bg-black text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
           />
+          {debouncedSearch && (
+            <div className="text-sm text-gray-400">
+              Showing {table.getFilteredRowModel().rows.length} of{" "}
+              {products.length} products
+              {debouncedSearch && ` for "${debouncedSearch}"`}
+            </div>
+          )}
         </div>
 
         <div className="overflow-hidden rounded-md bg-black">

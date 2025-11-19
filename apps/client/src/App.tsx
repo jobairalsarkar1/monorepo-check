@@ -32,8 +32,8 @@ function App() {
             <Route path="/posts" element={<Posts />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/products" element={<Products />} />
-            <Route path="/userspage" element={<UsersPage />} />
-            <Route path="/productspage" element={<ProductsPage />} />
+            <Route path="/users" element={<UsersPage />} />
+            <Route path="/v1/products" element={<ProductsPage />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>
