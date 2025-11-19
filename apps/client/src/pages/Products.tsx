@@ -37,7 +37,7 @@ export default function Products() {
   useEffect(() => {
     const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
 
-    // If URL page doesn't match current state, update state
+    // if URL page doesn't match current state, update state
     if (pageFromUrl !== currentPage) {
       setCurrentPage(pageFromUrl);
     }
@@ -77,7 +77,7 @@ export default function Products() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white">
           Products:{" "}
-          <span className="text-green-500">PlaceAPI API & Shadcn UI</span>
+          <span className="text-green-500">PlaceAPI & Shadcn UI</span>
         </h1>
         <a
           href="/"

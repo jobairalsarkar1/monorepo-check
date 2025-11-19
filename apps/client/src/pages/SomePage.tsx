@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Star, StarOffIcon } from "lucide-react";
+import { ArrowUpDown, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,7 +176,7 @@ function ProductsPage() {
       rowSelection,
     },
     enableGlobalFilter: true,
-    globalFilterFn: (row, columnId, filterValue) => {
+    globalFilterFn: (row, filterValue) => {
       if (!filterValue) return true;
 
       const search = filterValue.toLowerCase();
