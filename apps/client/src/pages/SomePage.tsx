@@ -13,19 +13,9 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -37,20 +27,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Types for our data
-interface Product {
-  id: number;
-  title: string;
-  price: number;
-  description: string;
-  category: string;
-  image: string;
-  rating: {
-    rate: number;
-    count: number;
-  };
-}
+import useDebounce from "@/hooks/useDebounce";
+import { Product } from "@/types";
 
 // API function to fetch products
 const fetchProducts = async (): Promise<Product[]> => {
@@ -61,64 +39,13 @@ const fetchProducts = async (): Promise<Product[]> => {
   return response.json();
 };
 
-// Debounce hook for search optimization
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
-
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 export const columns: ColumnDef<Product>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "title",
     header: "Product",
     cell: ({ row }) => (
-      <div className="flex items-center gap-3">
-        <img
-          src={row.original.image}
-          alt={row.original.title}
-          className="w-10 h-10 object-contain rounded"
-        />
-        <div className="max-w-xs">
-          <div className="font-medium line-clamp-2">
-            {row.getValue("title")}
-          </div>
-          <div className="text-sm text-muted-foreground line-clamp-1">
-            {row.original.description}
-          </div>
-        </div>
+      <div className="max-w-xs">
+        <div className="font-medium text-gray-900">{row.getValue("title")}</div>
       </div>
     ),
   },
@@ -126,7 +53,12 @@ export const columns: ColumnDef<Product>[] = [
     accessorKey: "category",
     header: "Category",
     cell: ({ row }) => (
-      <Badge variant="outline">{row.getValue("category")}</Badge>
+      <Badge
+        variant="secondary"
+        className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+      >
+        {row.getValue("category")}
+      </Badge>
     ),
   },
   {
@@ -136,6 +68,7 @@ export const columns: ColumnDef<Product>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
         >
           Price
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -149,7 +82,7 @@ export const columns: ColumnDef<Product>[] = [
         currency: "USD",
       }).format(price);
 
-      return <div className="font-medium">{formatted}</div>;
+      return <div className="font-medium text-gray-900">{formatted}</div>;
     },
   },
   {
@@ -159,6 +92,7 @@ export const columns: ColumnDef<Product>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
         >
           Rating
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -171,41 +105,10 @@ export const columns: ColumnDef<Product>[] = [
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <span className="text-yellow-500">★</span>
-            <span>{rating.rate}</span>
+            <span className="text-gray-900">{rating.rate}</span>
           </div>
-          <span className="text-muted-foreground text-sm">
-            ({rating.count})
-          </span>
+          <span className="text-gray-600 text-sm">({rating.count})</span>
         </div>
-      );
-    },
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const product = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(product.title)}
-            >
-              Copy product name
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
-            <DropdownMenuItem>Edit product</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       );
     },
   },
@@ -224,10 +127,10 @@ function ProductsPage() {
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
-  // Debounced search
+  // search debouncing
   const debouncedSearch = useDebounce(globalFilter, 300);
 
-  // TanStack Query for data fetching
+  // tanStack Query for data fetching
   const {
     data: products = [],
     isLoading,
@@ -240,7 +143,7 @@ function ProductsPage() {
     gcTime: 10 * 60 * 1000,
   });
 
-  // Sync URL with search
+  // syncing URL with search
   React.useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
     if (debouncedSearch) {
@@ -270,26 +173,37 @@ function ProductsPage() {
       columnVisibility,
       rowSelection,
     },
+    enableGlobalFilter: true,
+    globalFilterFn: (row, columnId, filterValue) => {
+      if (!filterValue) return true;
+
+      const search = filterValue.toLowerCase();
+      const title = row.original.title.toLowerCase();
+
+      return title.includes(search);
+    },
   });
 
   if (isError) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center text-red-500">Error: {error.message}</div>
+        <div className="text-center text-red-500 bg-red-50 p-4 rounded-lg border border-red-200">
+          Error: {error.message}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 bg-white min-h-screen">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+          <p className="text-gray-600 mt-1">
             Browse our collection of products
           </p>
         </div>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-gray-500">
           {table.getFilteredRowModel().rows.length} products
         </div>
       </div>
@@ -297,47 +211,27 @@ function ProductsPage() {
       <div className="w-full">
         <div className="flex items-center py-4">
           <Input
-            placeholder="Search all products..."
+            placeholder="Search products by title..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
-            className="max-w-sm"
+            className="max-w-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
-        <div className="overflow-hidden rounded-md border">
+        <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                <TableRow
+                  key={headerGroup.id}
+                  className="bg-gray-50 hover:bg-gray-50"
+                >
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id}>
+                      <TableHead
+                        key={header.id}
+                        className="text-gray-900 font-semibold"
+                      >
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -352,12 +246,11 @@ function ProductsPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                // Loading skeleton
-                Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
+                Array.from({ length: 10 }).map((_, index) => (
+                  <TableRow key={index} className="h-8 hover:bg-gray-50">
                     {columns.map((_, cellIndex) => (
                       <TableCell key={cellIndex}>
-                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="animate-pulse h-8 w-full bg-gray-200" />
                       </TableCell>
                     ))}
                   </TableRow>
@@ -367,9 +260,10 @@ function ProductsPage() {
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className="hover:bg-gray-50 border-gray-200"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className="py-3 text-gray-700">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -382,7 +276,7 @@ function ProductsPage() {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center"
+                    className="h-24 text-center text-gray-500"
                   >
                     No products found.
                   </TableCell>
@@ -393,9 +287,9 @@ function ProductsPage() {
         </div>
 
         <div className="flex items-center justify-end space-x-2 py-4">
-          <div className="text-muted-foreground flex-1 text-sm">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+          <div className="text-gray-600 flex-1 text-sm">
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </div>
           <div className="space-x-2">
             <Button
@@ -403,6 +297,7 @@ function ProductsPage() {
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 bg-white"
             >
               Previous
             </Button>
@@ -411,6 +306,7 @@ function ProductsPage() {
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 bg-white"
             >
               Next
             </Button>
