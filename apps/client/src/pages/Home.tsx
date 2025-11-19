@@ -99,7 +99,7 @@ function Home() {
           />
           <button
             type="submit"
-            className="px-6 py-2 bg-green-600 font-semibold tracking-wide text-white/90 rounded-md hover:bg-green-600/90 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+            className="px-6 py-2 bg-green-600/80 font-semibold tracking-wide text-white/90 rounded-md hover:bg-green-600/90 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
           >
             Create User
           </button>

@@ -222,7 +222,7 @@ function ProductsPage() {
           )}
         </div>
 
-        <div className="overflow-hidden rounded-md bg-black">
+        <div className="overflow-hidden rounded-md bg-black mt-2">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -251,9 +251,9 @@ function ProductsPage() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 10 }).map((_, index) => (
-                  <TableRow key={index} className="h-8 hover:bg-gray-50/80">
+                  <TableRow key={index} className="hover:bg-gray-50/80">
                     {columns.map((_, cellIndex) => (
-                      <TableCell key={cellIndex}>
+                      <TableCell key={cellIndex} className="py-3">
                         <Skeleton className="animate-pulse h-8 w-full bg-gray-500" />
                       </TableCell>
                     ))}
@@ -267,7 +267,7 @@ function ProductsPage() {
                     className="hover:bg-gray-200/20 border-gray-200"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="py-3 text-gray-700">
+                      <TableCell key={cell.id} className="py-4 text-gray-700">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()

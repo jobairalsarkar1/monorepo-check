@@ -105,8 +105,8 @@ export default function UsersPage() {
 
   if (isError) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center text-red-500 bg-red-50 p-4 rounded-lg border border-red-200">
+      <div className="container mx-auto p-6 min-h-screen flex items-center justify-center">
+        <div className="text-center text-xl text-red-500 p-4">
           Error: {error.message}
         </div>
       </div>
@@ -199,7 +199,7 @@ export default function UsersPage() {
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className="px-4 border-b border-gray-100 hover:bg-gray-800"
+                className="px-4 border-b border-gray-100 hover:bg-gray-200/20"
               >
                 <div className="grid grid-cols-12 gap-4 h-full items-center text-sm">
                   <div className="col-span-1 text-gray-50">
@@ -242,7 +242,7 @@ export default function UsersPage() {
             }}
           />
 
-          {/* Loading More Indicator */}
+          {/* loading more indicator */}
           {isFetchingNextPage && (
             <div
               style={{
@@ -253,14 +253,14 @@ export default function UsersPage() {
               }}
               className="flex justify-center items-center py-4"
             >
-              <div className="flex items-center space-x-2 text-gray-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span className="text-sm">Loading more users...</span>
+              <div className="flex items-center space-x-2 text-gray-500">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span className="text-base">Loading more users...</span>
               </div>
             </div>
           )}
 
-          {/* End of Results */}
+          {/* end of results */}
           {!hasNextPage && loadedUsers.length > 0 && (
             <div
               style={{

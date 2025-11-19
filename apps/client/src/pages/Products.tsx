@@ -65,8 +65,8 @@ export default function Products() {
   const SkeletonRow = () => (
     <TableRow className="h-16 bg-black">
       {Array.from({ length: 6 }).map((_, i) => (
-        <TableCell key={i}>
-          <div className="h-8 w-full bg-gray-400/60 rounded animate-pulse"></div>
+        <TableCell key={i} className="bg-black">
+          <div className="h-8 w-full bg-gray-200/20 rounded animate-pulse"></div>
         </TableCell>
       ))}
     </TableRow>
@@ -89,9 +89,9 @@ export default function Products() {
 
       {/* table */}
       <div className="overflow-x-auto rounded-lg">
-        <Table className="bg-gray-800 text-white">
+        <Table className="bg-black text-white">
           <TableHeader>
-            <TableRow className="bg-gray-950">
+            <TableRow className="bg-gray-900">
               <TableHead className="text-white font-semibold text-base">
                 Name
               </TableHead>
@@ -121,7 +121,7 @@ export default function Products() {
 
             {!query.isLoading &&
               data?.data?.map((p: any) => (
-                <TableRow key={p.id} className="bg-gray-950 hover:bg-gray-700">
+                <TableRow key={p.id} className="bg-black hover:bg-gray-200/20">
                   <TableCell className="font-semibold">{p.name}</TableCell>
                   <TableCell>{p.category}</TableCell>
                   <TableCell>${p.price.toFixed(2)}</TableCell>
