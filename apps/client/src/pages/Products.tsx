@@ -63,10 +63,10 @@ export default function Products() {
 
   // skeleton for table rows
   const SkeletonRow = () => (
-    <TableRow className="h-16">
+    <TableRow className="h-16 bg-black">
       {Array.from({ length: 6 }).map((_, i) => (
         <TableCell key={i}>
-          <div className="h-8 w-full bg-gray-700/60 rounded animate-pulse"></div>
+          <div className="h-8 w-full bg-gray-400/60 rounded animate-pulse"></div>
         </TableCell>
       ))}
     </TableRow>
