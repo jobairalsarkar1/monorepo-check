@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,7 @@ export const columns: ColumnDef<Product>[] = [
     header: "Product",
     cell: ({ row }) => (
       <div className="max-w-xs">
-        <div className="font-medium text-gray-900">{row.getValue("title")}</div>
+        <div className="font-medium text-gray-100">{row.getValue("title")}</div>
       </div>
     ),
   },
@@ -68,7 +68,7 @@ export const columns: ColumnDef<Product>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+          className="text-gray-700 hover:text-gray-900 hover:bg-gray-100/20"
         >
           Price
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -82,7 +82,7 @@ export const columns: ColumnDef<Product>[] = [
         currency: "USD",
       }).format(price);
 
-      return <div className="font-medium text-gray-900">{formatted}</div>;
+      return <div className="font-medium text-gray-100">{formatted}</div>;
     },
   },
   {
@@ -104,10 +104,12 @@ export const columns: ColumnDef<Product>[] = [
       return (
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
-            <span className="text-yellow-500">★</span>
-            <span className="text-gray-900">{rating.rate}</span>
+            <span className="text-yellow-500">
+              <Star className="w-4 h-4" />
+            </span>
+            <span className="text-gray-100">{rating.rate}</span>
           </div>
-          <span className="text-gray-600 text-sm">({rating.count})</span>
+          <span className="text-gray-100 text-sm">({rating.count})</span>
         </div>
       );
     },
@@ -128,7 +130,7 @@ function ProductsPage() {
   const [rowSelection, setRowSelection] = React.useState({});
 
   // search debouncing
-  const debouncedSearch = useDebounce(globalFilter, 300);
+  const debouncedSearch = useDebounce(globalFilter, 500);
 
   // tanStack Query for data fetching
   const {
@@ -144,7 +146,7 @@ function ProductsPage() {
   });
 
   // syncing URL with search
-  React.useEffect(() => {
+  useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
     if (debouncedSearch) {
       newParams.set("search", debouncedSearch);
@@ -174,14 +176,6 @@ function ProductsPage() {
       rowSelection,
     },
     enableGlobalFilter: true,
-    globalFilterFn: (row, columnId, filterValue) => {
-      if (!filterValue) return true;
-
-      const search = filterValue.toLowerCase();
-      const title = row.original.title.toLowerCase();
-
-      return title.includes(search);
-    },
   });
 
   if (isError) {
@@ -195,30 +189,40 @@ function ProductsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 bg-white min-h-screen">
+    <div className="container mx-auto p-6 space-y-6 bg-black min-h-screen">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-gray-100">Products</h1>
+          <p className="text-gray-200 text-lg mt-1">
             Browse our collection of products
           </p>
         </div>
-        <div className="text-sm text-gray-500">
-          {table.getFilteredRowModel().rows.length} products
-        </div>
+        <a
+          href="/"
+          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+        >
+          Back Home
+        </a>
       </div>
 
       <div className="w-full">
-        <div className="flex items-center py-4">
+        <div className="flex items-center py-4 gap-4">
           <Input
-            placeholder="Search products by title..."
+            placeholder="Search products by title or category..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
-            className="max-w-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+            className="max-w-sm border-gray-300 bg-black text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
           />
+          {debouncedSearch && (
+            <div className="text-sm text-gray-400">
+              Showing {table.getFilteredRowModel().rows.length} of{" "}
+              {products.length} products
+              {debouncedSearch && ` for "${debouncedSearch}"`}
+            </div>
+          )}
         </div>
 
-        <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-md bg-black mt-2">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -247,10 +251,10 @@ function ProductsPage() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 10 }).map((_, index) => (
-                  <TableRow key={index} className="h-8 hover:bg-gray-50">
+                  <TableRow key={index} className="hover:bg-gray-50/80">
                     {columns.map((_, cellIndex) => (
-                      <TableCell key={cellIndex}>
-                        <Skeleton className="animate-pulse h-8 w-full bg-gray-200" />
+                      <TableCell key={cellIndex} className="py-3">
+                        <Skeleton className="animate-pulse h-8 w-full bg-gray-500" />
                       </TableCell>
                     ))}
                   </TableRow>
@@ -260,10 +264,10 @@ function ProductsPage() {
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-gray-50 border-gray-200"
+                    className="hover:bg-gray-200/20 border-gray-200"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="py-3 text-gray-700">
+                      <TableCell key={cell.id} className="py-4 text-gray-700">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -287,7 +291,7 @@ function ProductsPage() {
         </div>
 
         <div className="flex items-center justify-end space-x-2 py-4">
-          <div className="text-gray-600 flex-1 text-sm">
+          <div className="text-gray-400 flex-1 text-sm">
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </div>

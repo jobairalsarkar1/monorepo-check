@@ -5,6 +5,8 @@ const navItems = [
   { name: "Posts", href: "/posts" },
   { name: "Reviews", href: "/reviews" },
   { name: "Products", href: "/products" },
+  { name: "Users (Virtualization)", href: "/users" },
+  { name: "Products (Shadcn Data Table)", href: "/v1/products" },
 ];
 
 function Home() {
@@ -13,7 +15,6 @@ function Home() {
 
   const health = trpc.health.useQuery();
   const users = trpc.userList.useQuery();
-  //   const posts = trpc.postList.useQuery();
 
   const createUser = trpc.userCreate.useMutation({
     onSuccess: () => {
@@ -36,13 +37,15 @@ function Home() {
         Nothing Ground Breaking:{" "}
         <span className="text-green-500"> Just Learning </span>
       </h1>
+
+      {/* navigation */}
       <nav>
         <ul className="flex space-x-4 mb-6">
           {navItems.map((item) => (
             <li key={item.name}>
               <a
                 href={item.href}
-                className="px-4 py-2 bg-green-600 rounded-md hover:bg-green-700 transition-colors duration-200"
+                className="px-4 py-2 text-gray-100 font-medium bg-green-600 rounded-md hover:bg-green-700 transition-colors duration-200"
               >
                 {item.name}
               </a>
@@ -51,17 +54,28 @@ function Home() {
         </ul>
       </nav>
 
+      {/* health check */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-2">Status Check</h2>
-        {health.data ? (
+
+        {health.isLoading && (
+          <p className="text-gray-600">Loading health status...</p>
+        )}
+
+        {health.isError && (
+          <p className="text-red-500 font-medium">
+            Something went wrong.
+            {/* {health.error?.message} */}
+          </p>
+        )}
+
+        {health.data && (
           <p className="text-green-600 font-medium tracking-wide">
             Status:{" "}
             <span className="font-semibold uppercase">
               {health.data.status}
             </span>
           </p>
-        ) : (
-          <p className="text-gray-600">Loading health status...</p>
         )}
       </section>
 
@@ -85,14 +99,22 @@ function Home() {
           />
           <button
             type="submit"
-            className="px-6 py-2 bg-green-500/80 font-semibold tracking-wide text-white/90 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+            className="px-6 py-2 bg-green-600/80 font-semibold tracking-wide text-white/90 rounded-md hover:bg-green-600/90 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
           >
             Create User
           </button>
         </form>
+
         {createUser.isPending && (
           <p className="mt-2 text-green-600 text-center font-semibold">
             Creating user...
+          </p>
+        )}
+
+        {/* mutation error */}
+        {createUser.isError && (
+          <p className="mt-2 text-red-500 text-center font-semibold">
+            {"Failed to create user. Please try again after some time."}
           </p>
         )}
       </section>
@@ -100,18 +122,29 @@ function Home() {
       {/* users */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Users</h2>
-        {users.isLoading ? (
+
+        {users.isLoading && (
           <p className="mt-2 text-green-600 text-center font-semibold">
             Loading users...
           </p>
-        ) : (
+        )}
+
+        {/* users get error */}
+        {users.isError && (
+          <p className="mt-2 text-red-500 text-center font-semibold">
+            Failed to load users.
+            {/* {users.error?.message} */}
+          </p>
+        )}
+
+        {!users.isLoading && users.data && (
           <div className="grid gap-4">
-            {users.data?.map((user: any) => (
+            {users.data.map((user: any) => (
               <div
                 key={user.id}
                 className="p-4 border border-gray-500 rounded-lg shadow-sm"
               >
-                <strong className="text-lg text-white/80">{user.name}</strong>
+                <strong className="text-lg text-gray-100">{user.name}</strong>
                 <span className="text-gray-500 ml-2">- {user.email}</span>
                 <span className="text-sm text-gray-500 ml-2">
                   (ID: {user.id})
@@ -121,31 +154,6 @@ function Home() {
           </div>
         )}
       </section>
-
-      {/* posts */}
-      {/* <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Posts</h2>
-        {posts.isLoading ? (
-          <p className="mt-2 text-green-600 text-center font-semibold">
-            Loading posts...
-          </p>
-        ) : (
-          <div className="grid gap-4">
-            {posts.data?.map((post: any) => (
-              <div
-                key={post.id}
-                className="p-4 border border-gray-500 rounded-lg shadow-sm"
-              >
-                <h3 className="text-lg font-semibold text-white/80">
-                  {post.title}
-                </h3>
-                <p className="text-gray-400 mt-2">{post.content}</p>
-                <small className="text-gray-500">By: {post.user?.name}</small>
-              </div>
-            ))}
-          </div>
-        )}
-      </section> */}
     </div>
   );
 }

@@ -36,3 +36,13 @@ export interface Product {
     count: number;
   };
 }
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  website: string;
+  company: { name: string };
+  address: { city: string };
+};

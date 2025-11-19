@@ -37,7 +37,7 @@ export default function Products() {
   useEffect(() => {
     const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
 
-    // If URL page doesn't match current state, update state
+    // if URL page doesn't match current state, update state
     if (pageFromUrl !== currentPage) {
       setCurrentPage(pageFromUrl);
     }
@@ -63,10 +63,10 @@ export default function Products() {
 
   // skeleton for table rows
   const SkeletonRow = () => (
-    <TableRow className="h-16">
+    <TableRow className="h-16 bg-black">
       {Array.from({ length: 6 }).map((_, i) => (
-        <TableCell key={i}>
-          <div className="h-8 w-full bg-gray-700/60 rounded animate-pulse"></div>
+        <TableCell key={i} className="bg-black">
+          <div className="h-8 w-full bg-gray-200/20 rounded animate-pulse"></div>
         </TableCell>
       ))}
     </TableRow>
@@ -77,7 +77,7 @@ export default function Products() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white">
           Products:{" "}
-          <span className="text-green-500">PlaceAPI API & Shadcn UI</span>
+          <span className="text-green-500">PlaceAPI & Shadcn UI</span>
         </h1>
         <a
           href="/"
@@ -89,9 +89,9 @@ export default function Products() {
 
       {/* table */}
       <div className="overflow-x-auto rounded-lg">
-        <Table className="bg-gray-800 text-white">
+        <Table className="bg-black text-white">
           <TableHeader>
-            <TableRow className="bg-gray-950">
+            <TableRow className="bg-gray-900">
               <TableHead className="text-white font-semibold text-base">
                 Name
               </TableHead>
@@ -121,7 +121,7 @@ export default function Products() {
 
             {!query.isLoading &&
               data?.data?.map((p: any) => (
-                <TableRow key={p.id} className="bg-gray-950 hover:bg-gray-700">
+                <TableRow key={p.id} className="bg-black hover:bg-gray-200/20">
                   <TableCell className="font-semibold">{p.name}</TableCell>
                   <TableCell>{p.category}</TableCell>
                   <TableCell>${p.price.toFixed(2)}</TableCell>
