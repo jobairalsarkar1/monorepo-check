@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input"; // replace if needed
-import { Badge } from "@/components/ui/badge"; // replace if needed
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 type User = {
   id: string;
@@ -21,36 +21,32 @@ async function fetchUsersPage(page = 1, pageSize = 25) {
   );
   if (!res.ok) throw new Error("Failed to fetch users");
   const json = await res.json();
+
+  // Transform randomuser.me data to our User type
   const users: User[] = json.results.map((r: any) => ({
     id: r.login.uuid,
     name: `${r.name.first} ${r.name.last}`,
     email: r.email,
     phone: r.phone,
     website: `${r.login.username}.example.com`,
-    company: { name: r.location.timezone.description || r.login.username },
-    address: { city: r.location.city || "" },
+    company: { name: r.location.timezone?.description || "Unknown Company" },
+    address: { city: r.location.city || "Unknown City" },
   }));
-  // randomuser doesn't tell you "end" — simulate finite data by stopping at page 10
+
+  // Simulate finite data by stopping at page 10
   const MAX_PAGE = 10;
   return { users, nextPage: page < MAX_PAGE ? page + 1 : undefined };
 }
 
-/**
- * UsersPage
- * - fixed rowHeight for stable virtualization
- * - sentinel observer to load next page
- * - only renders visible rows (virtualRows)
- * - no loader when no more pages
- */
 export default function UsersPage() {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const ROW_HEIGHT = 64; // fixed, predictable height
+  const ROW_HEIGHT = 64;
   const PAGE_SIZE = 25;
 
   const [emailQuery, setEmailQuery] = useState("");
 
-  // infinite query (v5 object signature) with initialPageParam
+  // Infinite query with proper typing
   const {
     data,
     fetchNextPage,
@@ -59,260 +55,239 @@ export default function UsersPage() {
     isLoading,
     isError,
     error,
-  } = useInfiniteQuery<
-    { users: User[]; nextPage?: number }, // TData
-    Error, // TError
-    { users: User[]; nextPage?: number } // TQueryFnData
-  >({
+  } = useInfiniteQuery({
     queryKey: ["users", "virtual"],
-    queryFn: async ({ pageParam = 1 }) =>
+    queryFn: ({ pageParam = 1 }) =>
       fetchUsersPage(pageParam as number, PAGE_SIZE),
-    getNextPageParam: (last) => last.nextPage,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 1,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // flatten loaded pages to array of loaded users
-  const loadedUsers = (data?.pages ?? []).flatMap((p) => p.users);
+  // Flatten all loaded users from all pages
+  const loadedUsers = data?.pages?.flatMap((page) => page.users) || [];
 
-  // client-side search by email. When searching, we DO NOT auto-load more pages.
-  const filtered = emailQuery
-    ? loadedUsers.filter((u) =>
-        u.email.toLowerCase().includes(emailQuery.toLowerCase())
+  // Client-side search by email
+  const filteredUsers = emailQuery
+    ? loadedUsers.filter((user) =>
+        user.email.toLowerCase().includes(emailQuery.toLowerCase())
       )
     : loadedUsers;
 
-  // Virtualizer: count = number of items currently available after filter
+  // Virtualizer setup
   const rowVirtualizer = useVirtualizer({
-    count: filtered.length,
+    count: filteredUsers.length,
     getScrollElement: () => viewportRef.current,
     estimateSize: () => ROW_HEIGHT,
-    overscan: 3,
+    overscan: 5,
   });
 
-  const virtualItems = rowVirtualizer.getVirtualItems();
+  const virtualRows = rowVirtualizer.getVirtualItems();
   const totalSize = rowVirtualizer.getTotalSize();
 
-  // IntersectionObserver sentinel: load next page when sentinel visible.
-  // Only active when there's a next page AND when there is no active search.
+  // IntersectionObserver for infinite scroll
   useEffect(() => {
     if (!sentinelRef.current || !viewportRef.current) return;
-    const sentinel = sentinelRef.current;
-    const root = viewportRef.current;
-    const obs = new IntersectionObserver(
+
+    const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (
-            entry.isIntersecting &&
-            hasNextPage &&
-            !isFetchingNextPage &&
-            !emailQuery // don't auto-load while searching
-          ) {
-            fetchNextPage();
-          }
+        const [entry] = entries;
+        if (
+          entry.isIntersecting &&
+          hasNextPage &&
+          !isFetchingNextPage &&
+          !emailQuery // Don't auto-load while searching
+        ) {
+          fetchNextPage();
         }
       },
       {
-        root,
-        rootMargin: "400px", // trigger early for smoother UX
+        root: viewportRef.current,
+        rootMargin: "100px", // Load when 100px from viewport
         threshold: 0.1,
       }
     );
-    obs.observe(sentinel);
-    return () => obs.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, emailQuery]);
 
-  // smooth GPU transform hint
-  const rowBaseStyle: React.CSSProperties = {
-    willChange: "transform",
-    transform: "translateZ(0)",
-  };
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, emailQuery]);
 
   if (isError) {
     return (
-      <div className="p-6">
-        <div className="text-red-600">Error: {(error as Error).message}</div>
+      <div className="container mx-auto p-6">
+        <div className="text-center text-red-500 bg-red-50 p-4 rounded-lg border border-red-200">
+          Error: {error.message}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">Users</h2>
-          <p className="text-sm text-gray-500">
-            Only viewport rows are rendered — scroll to load more.
+          <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+          <p className="text-gray-600 mt-1">
+            Virtualized infinite scroll with email search
           </p>
         </div>
-
-        <div className="w-72">
-          <Input
-            placeholder="Search by email..."
-            value={emailQuery}
-            onChange={(e) => setEmailQuery(e.target.value)}
-          />
+        <div className="text-sm text-gray-500">
+          {filteredUsers.length} users loaded
+          {emailQuery && ` (filtered by email)`}
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className="w-full max-w-md">
+        <Input
+          placeholder="Search users by email..."
+          value={emailQuery}
+          onChange={(e) => setEmailQuery(e.target.value)}
+          className="border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Virtualized Table Container */}
       <div
         ref={viewportRef}
-        className="relative overflow-auto border rounded-md"
-        style={{ height: "65vh", minHeight: 420 }}
+        className="overflow-auto rounded-md border border-gray-200 bg-white"
+        style={{ height: "60vh", minHeight: "400px" }}
       >
-        {/* Header (sticky) using CSS grid to align columns */}
-        <div
-          className="sticky top-0 z-10 bg-white border-b"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "4rem 1.6fr 2.4fr 1.6fr 1.6fr 1fr 1.4fr",
-            gap: 12,
-            padding: "12px",
-            alignItems: "center",
-          }}
-        >
-          <div className="font-medium text-gray-800">#</div>
-          <div className="font-medium text-gray-800">Name</div>
-          <div className="font-medium text-gray-800">Email</div>
-          <div className="font-medium text-gray-800">Phone</div>
-          <div className="font-medium text-gray-800">Company</div>
-          <div className="font-medium text-gray-800">City</div>
-          <div className="font-medium text-gray-800">Website</div>
+        {/* Table Header */}
+        <div className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200">
+          <div className="grid grid-cols-12 gap-4 px-4 py-3 text-sm font-semibold text-gray-900">
+            <div className="col-span-1">#</div>
+            <div className="col-span-2">Name</div>
+            <div className="col-span-3">Email</div>
+            <div className="col-span-2">Phone</div>
+            <div className="col-span-2">Company</div>
+            <div className="col-span-2">City</div>
+          </div>
         </div>
 
-        {/* Scrollable space sized to the total virtualized height */}
+        {/* Virtualized Content */}
         <div style={{ height: totalSize, position: "relative" }}>
-          {/* initial loading skeleton */}
-          {isLoading && (
-            <div className="p-6 space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => (
+          {/* Initial Loading Skeleton */}
+          {isLoading && loadedUsers.length === 0 && (
+            <div className="absolute inset-0 p-4 space-y-3">
+              {Array.from({ length: 8 }).map((_, index) => (
                 <div
-                  key={i}
-                  className="animate-pulse"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "4rem 1.6fr 2.4fr 1.6fr 1.6fr 1fr 1.4fr",
-                    gap: 12,
-                    padding: "12px 0",
-                  }}
+                  key={index}
+                  className="grid grid-cols-12 gap-4 py-3 animate-pulse"
                 >
-                  <div className="h-4 bg-gray-200 rounded" />
-                  <div className="h-4 bg-gray-200 rounded" />
-                  <div className="h-4 bg-gray-200 rounded" />
-                  <div className="h-4 bg-gray-200 rounded" />
-                  <div className="h-4 bg-gray-200 rounded" />
-                  <div className="h-4 bg-gray-200 rounded" />
-                  <div className="h-4 bg-gray-200 rounded" />
+                  <div className="col-span-1 h-4 bg-gray-200 rounded"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded"></div>
+                  <div className="col-span-3 h-4 bg-gray-200 rounded"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded"></div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Render only the virtual items (visible + overscan) */}
-          {virtualItems.map((vi) => {
-            const user = filtered[vi.index];
+          {/* Virtual Rows */}
+          {virtualRows.map((virtualRow) => {
+            const user = filteredUsers[virtualRow.index];
             if (!user) return null;
+
             return (
               <div
                 key={user.id}
-                role="row"
                 style={{
                   position: "absolute",
                   top: 0,
                   left: 0,
                   width: "100%",
-                  transform: `translateY(${vi.start}px)`,
-                  height: vi.size ?? ROW_HEIGHT,
-                  ...rowBaseStyle,
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className="px-3 flex items-center hover:bg-gray-50"
+                className="px-4 border-b border-gray-100 hover:bg-gray-50"
               >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "4rem 1.6fr 2.4fr 1.6fr 1.6fr 1fr 1.4fr",
-                    gap: 12,
-                    width: "100%",
-                    alignItems: "center",
-                  }}
-                >
-                  <div className="text-sm text-gray-700">{vi.index + 1}</div>
-                  <div className="font-medium text-sm truncate">
+                <div className="grid grid-cols-12 gap-4 h-full items-center text-sm">
+                  <div className="col-span-1 text-gray-600">
+                    {virtualRow.index + 1}
+                  </div>
+                  <div className="col-span-2 font-medium text-gray-900 truncate">
                     {user.name}
                   </div>
-                  <div className="text-sm truncate">{user.email}</div>
-                  <div className="text-sm truncate">{user.phone}</div>
-                  <div className="text-sm">
-                    <Badge className="bg-blue-100 text-blue-800">
+                  <div className="col-span-3 text-gray-700 truncate">
+                    {user.email}
+                  </div>
+                  <div className="col-span-2 text-gray-700 truncate">
+                    {user.phone}
+                  </div>
+                  <div className="col-span-2">
+                    <Badge
+                      variant="secondary"
+                      className="bg-blue-100 text-blue-800"
+                    >
                       {user.company.name}
                     </Badge>
                   </div>
-                  <div className="text-sm truncate">{user.address.city}</div>
-                  <div className="text-sm truncate">
-                    <a
-                      href={`http://${user.website}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {user.website}
-                    </a>
+                  <div className="col-span-2 text-gray-700 truncate">
+                    {user.address.city}
                   </div>
                 </div>
               </div>
             );
           })}
 
-          {/* Sentinel: placed at the end of the total content; observer triggers fetchNextPage */}
-          {/* If there is no next page, sentinel still exists but won't trigger fetchNextPage */}
+          {/* Sentinel for Infinite Scroll */}
           <div
             ref={sentinelRef}
             style={{
               position: "absolute",
-              top: totalSize + 1,
+              top: totalSize,
               left: 0,
               width: "100%",
-              height: 1,
+              height: "1px",
             }}
-            aria-hidden
           />
 
-          {/* Bottom loader: realistic and only when fetching next page */}
-          {isFetchingNextPage && hasNextPage && (
+          {/* Loading More Indicator */}
+          {isFetchingNextPage && (
             <div
               style={{
                 position: "absolute",
+                top: totalSize + 10,
                 left: 0,
-                top: totalSize + 12,
                 width: "100%",
               }}
-              className="py-3 text-center"
+              className="flex justify-center items-center py-4"
             >
-              <div className="inline-flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-gray-300 animate-pulse" />
-                <div className="text-sm text-gray-600">Loading more...</div>
+              <div className="flex items-center space-x-2 text-gray-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-sm">Loading more users...</span>
               </div>
             </div>
           )}
 
-          {/* If there's no next page and we've loaded everything, show a small end message */}
+          {/* End of Results */}
           {!hasNextPage && loadedUsers.length > 0 && (
             <div
               style={{
                 position: "absolute",
+                top: totalSize + 10,
                 left: 0,
-                top: totalSize + 12,
                 width: "100%",
               }}
-              className="py-3 text-center text-sm text-gray-500"
+              className="flex justify-center py-4"
             >
-              End of results.
+              <span className="text-sm text-gray-500">
+                All users loaded ({loadedUsers.length} total)
+              </span>
             </div>
           )}
         </div>
       </div>
+
+      {/* No Results State */}
+      {!isLoading && filteredUsers.length === 0 && emailQuery && (
+        <div className="text-center py-8 text-gray-500">
+          No users found with email containing "{emailQuery}"
+        </div>
+      )}
     </div>
   );
 }
