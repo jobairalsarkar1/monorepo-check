@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const API_KEY = import.meta.env.VITE_PLACEAPI_KEY;
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 8;
 
 const fetchProducts = async (page: number) => {
   const res = await fetch(
@@ -26,26 +26,22 @@ const fetchProducts = async (page: number) => {
 };
 
 export default function Products() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Get initial page from URL or default to 1
   const initialPage = parseInt(searchParams.get("page") || "1", 10);
   const [currentPage, setCurrentPage] = useState(initialPage);
 
-  // When URL changes, update state
+  // Single useEffect to handle URL-state synchronization
   useEffect(() => {
-    const pageInUrl = parseInt(searchParams.get("page") || "1", 10);
-    if (pageInUrl !== currentPage) {
-      setCurrentPage(pageInUrl);
-    }
-  }, [searchParams]);
+    const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
 
-  // When state changes, update URL
-  useEffect(() => {
-    const pageInUrl = parseInt(searchParams.get("page") || "1", 10);
-    if (pageInUrl !== currentPage) {
-      navigate(`?page=${currentPage}`);
+    // If URL page doesn't match current state, update state
+    if (pageFromUrl !== currentPage) {
+      setCurrentPage(pageFromUrl);
     }
-  }, [currentPage]);
+  }, [searchParams, currentPage]);
 
   const query = useQuery({
     queryKey: ["products", currentPage],
@@ -58,19 +54,21 @@ export default function Products() {
 
   const goToPage = (page: number) => {
     if (page < 1 || page > totalPages) return;
+
+    // Update both state and URL simultaneously
     setCurrentPage(page);
+    navigate(`?page=${page}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // skeleton for table rows
   const SkeletonRow = () => (
-    <TableRow className="animate-pulse">
-      <TableCell className="h-12 bg-gray-950 rounded"></TableCell>
-      <TableCell className="h-12 bg-gray-950 rounded"></TableCell>
-      <TableCell className="h-12 bg-gray-950 rounded"></TableCell>
-      <TableCell className="h-12 bg-gray-950 rounded"></TableCell>
-      <TableCell className="h-12 bg-gray-950 rounded"></TableCell>
-      <TableCell className="h-12 bg-gray-950 rounded"></TableCell>
+    <TableRow className="h-16">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <TableCell key={i}>
+          <div className="h-8 w-full bg-gray-700/60 rounded animate-pulse"></div>
+        </TableCell>
+      ))}
     </TableRow>
   );
 
@@ -122,7 +120,7 @@ export default function Products() {
               ))}
 
             {!query.isLoading &&
-              data.data.map((p: any) => (
+              data?.data?.map((p: any) => (
                 <TableRow key={p.id} className="bg-gray-950 hover:bg-gray-700">
                   <TableCell className="font-semibold">{p.name}</TableCell>
                   <TableCell>{p.category}</TableCell>

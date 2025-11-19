@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import Posts from "./pages/Posts";
 import Reviews from "./pages/Reviews";
 import Products from "./pages/Products";
+import ProductsPage from "./pages/SomePage";
+import UsersPage from "./pages/UserPage";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -30,6 +32,8 @@ function App() {
             <Route path="/posts" element={<Posts />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/userspage" element={<UsersPage />} />
+            <Route path="/productspage" element={<ProductsPage />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>
