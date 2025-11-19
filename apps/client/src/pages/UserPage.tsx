@@ -148,7 +148,7 @@ export default function UsersPage() {
       <div
         ref={viewportRef}
         className="overflow-auto rounded-md text-white bg-black"
-        style={{ height: "60vh", minHeight: "400px" }}
+        style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
       >
         {/* Table Header */}
         <div className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200">
