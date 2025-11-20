@@ -1,7 +1,19 @@
 import React, { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { Star } from "lucide-react";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+  VisibilityState,
+} from "@tanstack/react-table";
+import { ArrowUpDown, Star } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -25,7 +37,7 @@ import {
 import useDebounce from "@/hooks/useDebounce";
 import { Product } from "@/types";
 
-// Constants
+// constant
 const ITEMS_PER_PAGE = 10;
 
 // API function to fetch products with pagination
@@ -37,12 +49,10 @@ const fetchProducts = async (
   total: number;
   totalPages: number;
 }> => {
-  // DummyJSON supports pagination with skip and limit
   const skip = (page - 1) * ITEMS_PER_PAGE;
 
   let url = `https://dummyjson.com/products?limit=${ITEMS_PER_PAGE}&skip=${skip}`;
 
-  // If there's a search query, use the search endpoint
   if (search) {
     url = `https://dummyjson.com/products/search?q=${encodeURIComponent(
       search
@@ -56,7 +66,6 @@ const fetchProducts = async (
 
   const json = await response.json();
 
-  // Map the DummyJSON response to match our Product type
   const products = json.products.map((product: any) => ({
     id: product.id,
     title: product.title,
@@ -77,20 +86,104 @@ const fetchProducts = async (
   };
 };
 
+export const columns: ColumnDef<Product>[] = [
+  {
+    accessorKey: "title",
+    header: "Product",
+    cell: ({ row }) => (
+      <div className="max-w-xs">
+        <div
+          className="font-medium text-gray-100 truncate"
+          title={row.getValue("title")}
+        >
+          {row.getValue("title")}
+        </div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "category",
+    header: "Category",
+    cell: ({ row }) => (
+      <div className="max-w-[120px]">
+        <Badge
+          variant="secondary"
+          className="bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-800/40 truncate w-full"
+          title={row.getValue("category")}
+        >
+          {row.getValue("category")}
+        </Badge>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "price",
+    header: ({ column }) => {
+      return (
+        <div
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="cursor-pointer flex items-center text-gray-200 hover:text-gray-100"
+        >
+          Price
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </div>
+      );
+    },
+    cell: ({ row }) => {
+      const price = parseFloat(row.getValue("price"));
+      const formatted = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(price);
+
+      return <div className="font-medium text-gray-100">{formatted}</div>;
+    },
+  },
+  {
+    accessorKey: "rating.rate",
+    header: ({ column }) => {
+      return (
+        <div
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="cursor-pointer flex items-center text-gray-200 hover:text-gray-100"
+        >
+          Rating
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </div>
+      );
+    },
+    cell: ({ row }) => {
+      const rating = row.original.rating;
+      return (
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <span className="text-yellow-500">
+              <Star className="w-4 h-4 fill-yellow-500" />
+            </span>
+            <span className="text-gray-100">{rating.rate.toFixed(1)}</span>
+          </div>
+          <span className="text-gray-400 text-sm">({rating.count})</span>
+        </div>
+      );
+    },
+  },
+];
+
 function TestProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Get initial values from URL
+  // initial states from url
   const initialPage = parseInt(searchParams.get("page") || "1", 10);
   const initialSearch = searchParams.get("search") || "";
 
   const [globalFilter, setGlobalFilter] = React.useState(initialSearch);
-
-  // Remove unused states
-  // const [sorting, setSorting] = React.useState<SortingState>([]);
-  // const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  // const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  // const [rowSelection, setRowSelection] = React.useState({});
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
 
   // search debouncing
   const debouncedSearch = useDebounce(globalFilter, 500);
@@ -109,26 +202,51 @@ function TestProductsPage() {
   });
 
   const products = response?.products || [];
-  const totalProducts = response?.total || 0;
+  // const totalProducts = response?.total || 0;
   const totalPages = response?.totalPages || 1;
 
-  // Sync URL with search and pagination
+  // React Table instance
+  const table = useReactTable({
+    data: products,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter: debouncedSearch,
+      columnVisibility,
+      rowSelection,
+    },
+    enableGlobalFilter: true,
+    manualPagination: true,
+    pageCount: totalPages,
+  });
+
+  // url syncing with search & pagination
   useEffect(() => {
     const newParams = new URLSearchParams();
 
-    // Always set page to 1 when search changes
+    // incase of search change reset to page 1
     const pageToSet =
       debouncedSearch !== initialSearch ? "1" : initialPage.toString();
     newParams.set("page", pageToSet);
 
-    // Add search to URL if exists
+    // search params to url if exists
     if (debouncedSearch) {
       newParams.set("search", debouncedSearch);
     } else {
       newParams.delete("search");
     }
 
-    // Only update if something actually changed
+    // update if something actually changed
     if (newParams.toString() !== searchParams.toString()) {
       setSearchParams(newParams);
     }
@@ -140,7 +258,7 @@ function TestProductsPage() {
     searchParams,
   ]);
 
-  // Handle search change - reset to page 1
+  // incase of search change reset to page 1
   const handleSearchChange = (value: string) => {
     setGlobalFilter(value);
   };
@@ -163,7 +281,7 @@ function TestProductsPage() {
     );
   }
 
-  // Generate page numbers for pagination (simplified)
+  // page numbers for pagination
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
@@ -220,20 +338,28 @@ function TestProductsPage() {
         <div className="overflow-hidden rounded-md border border-gray-700 bg-gray-900 mt-2">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-800 hover:bg-gray-800 border-gray-700">
-                <TableHead className="text-gray-200 font-semibold py-4">
-                  Product
-                </TableHead>
-                <TableHead className="text-gray-200 font-semibold py-4">
-                  Category
-                </TableHead>
-                <TableHead className="text-gray-200 font-semibold py-4">
-                  Price
-                </TableHead>
-                <TableHead className="text-gray-200 font-semibold py-4">
-                  Rating
-                </TableHead>
-              </TableRow>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow
+                  key={headerGroup.id}
+                  className="bg-gray-800 hover:bg-gray-800 border-gray-700"
+                >
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className="text-gray-200 font-semibold py-4"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
             </TableHeader>
             <TableBody>
               {isLoading ? (
@@ -261,57 +387,27 @@ function TestProductsPage() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : products.length > 0 ? (
-                products.map((product) => (
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
                   <TableRow
-                    key={product.id}
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
                     className="hover:bg-gray-800/50 border-gray-700 transition-colors h-16"
                   >
-                    <TableCell className="py-3">
-                      <div
-                        className="font-medium text-gray-100 truncate max-w-xs"
-                        title={product.title}
-                      >
-                        {product.title}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <div className="max-w-[120px]">
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-800/40 truncate w-full"
-                          title={product.category}
-                        >
-                          {product.category}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <div className="font-medium text-gray-100">
-                        ${product.price.toFixed(2)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-500">
-                            <Star className="w-4 h-4 fill-yellow-500" />
-                          </span>
-                          <span className="text-gray-100">
-                            {product.rating.rate.toFixed(1)}
-                          </span>
-                        </div>
-                        <span className="text-gray-400 text-sm">
-                          ({product.rating.count})
-                        </span>
-                      </div>
-                    </TableCell>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="py-3">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={columns.length}
                     className="h-24 text-center text-gray-400 py-8"
                   >
                     No products found.
@@ -322,17 +418,15 @@ function TestProductsPage() {
           </Table>
         </div>
 
-        {/* ShadCN Pagination Component */}
+        {/* pagination */}
         <div className="flex flex-col sm:flex-row justify-between items-center py-4 gap-4">
-          <div className="text-gray-400 text-sm">
-            Page {initialPage} of {totalPages} • Showing {products.length} of{" "}
-            {totalProducts} products
-            {debouncedSearch && ` for "${debouncedSearch}"`}
-          </div>
+          {/* <div className="text-gray-400 text-sm">
+            Page {initialPage} of {totalPages}
+          </div> */}
 
           <Pagination>
             <PaginationContent>
-              {/* Previous Button */}
+              {/* previous */}
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => goToPage(initialPage - 1)}
@@ -344,7 +438,7 @@ function TestProductsPage() {
                 />
               </PaginationItem>
 
-              {/* Page Numbers */}
+              {/* page numbers */}
               {pageNumbers.map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
@@ -361,7 +455,7 @@ function TestProductsPage() {
                 </PaginationItem>
               ))}
 
-              {/* Next Button */}
+              {/* next */}
               <PaginationItem>
                 <PaginationNext
                   onClick={() => goToPage(initialPage + 1)}

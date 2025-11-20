@@ -30,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import useDebounce from "@/hooks/useDebounce";
 import { Product } from "@/types";
 
-// Updated API function to fetch more products
+// api call function
 const fetchProducts = async (): Promise<Product[]> => {
   const response = await fetch("https://dummyjson.com/products?limit=100");
   if (!response.ok) {
@@ -38,7 +38,7 @@ const fetchProducts = async (): Promise<Product[]> => {
   }
   const json = await response.json();
   
-  // Map the DummyJSON response to match our Product type
+  // mapping dummy json to product type
   return json.products.map((product: any) => ({
     id: product.id,
     title: product.title,
@@ -48,7 +48,7 @@ const fetchProducts = async (): Promise<Product[]> => {
     image: product.thumbnail,
     rating: {
       rate: product.rating,
-      count: product.stock // Using stock as count since DummyJSON doesn't have rating count
+      count: product.stock
     }
   }));
 };
