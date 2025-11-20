@@ -11,6 +11,7 @@ import Products from "./pages/Products";
 import ProductsPage from "./pages/SomePage";
 import UsersPage from "./pages/UserPage";
 import TestPage from "./pages/TestPage";
+import TestProductsPage from "./pages/TestProductsPage";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -36,6 +37,7 @@ function App() {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/v1/products" element={<ProductsPage />} />
             <Route path="/v2/products" element={<TestPage />} />
+            <Route path="/v3/products" element={<TestProductsPage />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>

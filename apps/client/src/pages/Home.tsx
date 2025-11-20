@@ -8,6 +8,7 @@ const navItems = [
   { name: "Users (Virtualization)", href: "/users" },
   { name: "Products (Shadcn Data Table)", href: "/v1/products" },
   { name: "Test Products (Shadcn Data Table)", href: "/v2/products" },
+  { name: "Test Products 2 (Shadcn Data Table)", href: "/v3/products" },
 ];
 
 function Home() {
