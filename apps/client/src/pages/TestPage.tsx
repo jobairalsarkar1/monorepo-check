@@ -30,13 +30,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import useDebounce from "@/hooks/useDebounce";
 import { Product } from "@/types";
 
-// API function to fetch products
+// Updated API function to fetch more products
 const fetchProducts = async (): Promise<Product[]> => {
-  const response = await fetch("https://fakestoreapi.com/products");
+  const response = await fetch("https://dummyjson.com/products?limit=100");
   if (!response.ok) {
     throw new Error("Failed to fetch products");
   }
-  return response.json();
+  const json = await response.json();
+  
+  // Map the DummyJSON response to match our Product type
+  return json.products.map((product: any) => ({
+    id: product.id,
+    title: product.title,
+    price: product.price,
+    description: product.description,
+    category: product.category,
+    image: product.thumbnail,
+    rating: {
+      rate: product.rating,
+      count: product.stock // Using stock as count since DummyJSON doesn't have rating count
+    }
+  }));
 };
 
 export const columns: ColumnDef<Product>[] = [
@@ -113,7 +127,7 @@ export const columns: ColumnDef<Product>[] = [
             <span className="text-yellow-500">
               <Star className="w-4 h-4 fill-yellow-500" />
             </span>
-            <span className="text-gray-100">{rating.rate}</span>
+            <span className="text-gray-100">{rating.rate.toFixed(1)}</span>
           </div>
           <span className="text-gray-400 text-sm">({rating.count})</span>
         </div>
@@ -122,7 +136,7 @@ export const columns: ColumnDef<Product>[] = [
   },
 ];
 
-function ProductsPage() {
+function TestPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [globalFilter, setGlobalFilter] = React.useState(
     searchParams.get("search") || ""
@@ -200,7 +214,7 @@ function ProductsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-100">Products</h1>
           <p className="text-gray-300 text-lg mt-1">
-            Browse our collection of products
+            Browse our collection of {products.length} products
           </p>
         </div>
         <a
@@ -342,4 +356,4 @@ function ProductsPage() {
   );
 }
 
-export default ProductsPage;
+export default TestPage;

@@ -106,7 +106,7 @@ export default function UsersPage() {
   if (isError) {
     return (
       <div className="container mx-auto p-6 min-h-screen flex items-center justify-center">
-        <div className="text-center text-xl text-red-500 p-4">
+        <div className="text-center text-xl text-red-400 bg-red-900/20 p-4 rounded-lg border border-red-800">
           Error: {error.message}
         </div>
       </div>
@@ -114,7 +114,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 bg-black min-h-screen">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-100">Users</h1>
@@ -122,13 +122,9 @@ export default function UsersPage() {
             Virtualized infinite scroll with email search
           </p>
         </div>
-        {/* <div className="text-sm text-gray-300">
-          {filteredUsers.length} users loaded
-          {emailQuery && ` (filtered by email)`}
-        </div> */}
         <a
           href="/"
-          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
         >
           Back Home
         </a>
@@ -140,19 +136,19 @@ export default function UsersPage() {
           placeholder="Search users by email..."
           value={emailQuery}
           onChange={(e) => setEmailQuery(e.target.value)}
-          className="border-gray-400 bg-black text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+          className="border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
         />
       </div>
 
       {/* Virtualized Table Container */}
       <div
         ref={viewportRef}
-        className="overflow-auto rounded-md text-white bg-black"
-        style={{ height: "60vh", minHeight: "400px" }}
+        className="overflow-auto rounded-md border border-gray-700 bg-gray-900"
+        style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
       >
         {/* Table Header */}
-        <div className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200">
-          <div className="grid grid-cols-12 gap-4 px-4 py-3 text-sm font-semibold text-gray-900">
+        <div className="sticky top-0 bg-gray-800 z-10 border-b border-gray-700">
+          <div className="grid grid-cols-12 gap-4 px-4 py-3 text-sm font-semibold text-gray-200">
             <div className="col-span-1">ID</div>
             <div className="col-span-2">Name</div>
             <div className="col-span-3">Email</div>
@@ -172,12 +168,12 @@ export default function UsersPage() {
                   key={index}
                   className="grid grid-cols-12 gap-4 py-3 animate-pulse"
                 >
-                  <div className="col-span-1 h-8 bg-gray-200 rounded"></div>
-                  <div className="col-span-2 h-8 bg-gray-200 rounded"></div>
-                  <div className="col-span-3 h-8 bg-gray-200 rounded"></div>
-                  <div className="col-span-2 h-8 bg-gray-200 rounded"></div>
-                  <div className="col-span-2 h-8 bg-gray-200 rounded"></div>
-                  <div className="col-span-2 h-8 bg-gray-200 rounded"></div>
+                  <div className="col-span-1 h-8 bg-gray-700 rounded"></div>
+                  <div className="col-span-2 h-8 bg-gray-700 rounded"></div>
+                  <div className="col-span-3 h-8 bg-gray-700 rounded"></div>
+                  <div className="col-span-2 h-8 bg-gray-700 rounded"></div>
+                  <div className="col-span-2 h-8 bg-gray-700 rounded"></div>
+                  <div className="col-span-2 h-8 bg-gray-700 rounded"></div>
                 </div>
               ))}
             </div>
@@ -199,28 +195,31 @@ export default function UsersPage() {
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className="px-4 border-b border-gray-100 hover:bg-gray-200/20"
+                className="px-4 border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
               >
                 <div className="grid grid-cols-12 gap-4 h-full items-center text-sm">
-                  <div className="col-span-1 text-gray-50">
+                  <div className="col-span-1 text-gray-300">
                     {virtualRow.index + 1}
                   </div>
                   <div className="col-span-2 font-medium text-gray-100 truncate">
                     {user.name}
                   </div>
-                  <div className="col-span-3 text-gray-50 truncate">
+                  <div className="col-span-3 text-gray-300 truncate">
                     {user.email}
                   </div>
-                  <div className="col-span-2 text-gray-50 truncate">
+                  <div className="col-span-2 text-gray-300 truncate">
                     {user.phone}
                   </div>
                   <div className="col-span-2">
-                    <Badge
-                      variant="secondary"
-                      className="bg-blue-100 text-blue-800"
-                    >
-                      {user.company.name}
-                    </Badge>
+                    <div className="max-w-[120px]">
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-800/40 truncate w-full"
+                        title={user.company.name}
+                      >
+                        {user.company.name}
+                      </Badge>
+                    </div>
                   </div>
                   <div className="col-span-2 text-gray-100 truncate">
                     {user.address.city}
@@ -253,14 +252,14 @@ export default function UsersPage() {
               }}
               className="flex justify-center items-center py-4"
             >
-              <div className="flex items-center space-x-2 text-gray-500">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <div className="flex items-center space-x-2 text-gray-400">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                 <span className="text-base">Loading more users...</span>
               </div>
             </div>
           )}
 
-          {/* end of results */}
+          {/* end of results - Show appropriate message based on search */}
           {!hasNextPage && loadedUsers.length > 0 && (
             <div
               style={{
@@ -271,21 +270,25 @@ export default function UsersPage() {
               }}
               className="flex justify-center py-4"
             >
-              <span className="text-base font-medium tracking-wide text-gray-100">
-                {/* All users loaded ({loadedUsers.length} total) */}
-                You are all caught up!
+              <span className="text-base font-medium tracking-wide text-gray-300">
+                {emailQuery && filteredUsers.length === 0
+                  ? `No users found with email containing "${emailQuery}"`
+                  : "You are all caught up!"}
               </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* No Results State */}
-      {!isLoading && filteredUsers.length === 0 && emailQuery && (
-        <div className="text-center py-8 text-gray-500">
-          No users found with email containing "{emailQuery}"
-        </div>
-      )}
+      {/* No Results State - Fallback for empty search */}
+      {!isLoading &&
+        filteredUsers.length === 0 &&
+        emailQuery &&
+        loadedUsers.length > 0 && (
+          <div className="text-center py-8 text-gray-400">
+            No users found with email containing "{emailQuery}"
+          </div>
+        )}
     </div>
   );
 }

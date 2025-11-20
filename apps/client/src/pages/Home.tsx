@@ -7,6 +7,8 @@ const navItems = [
   { name: "Products", href: "/products" },
   { name: "Users (Virtualization)", href: "/users" },
   { name: "Products (Shadcn Data Table)", href: "/v1/products" },
+  { name: "Test Products (Shadcn Data Table)", href: "/v2/products" },
+  { name: "Test Products 2 (Shadcn Data Table)", href: "/v3/products" },
 ];
 
 function Home() {
@@ -40,7 +42,7 @@ function Home() {
 
       {/* navigation */}
       <nav>
-        <ul className="flex space-x-4 mb-6">
+        <ul className="flex flex-wrap gap-x-3 gap-y-6 mb-6">
           {navItems.map((item) => (
             <li key={item.name}>
               <a
